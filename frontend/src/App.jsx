@@ -77,50 +77,73 @@ function ClusterLayer({ events }) {
 function App() {
   const [events, setEvents] = useState([])
   const [selectedType, setSelectedType] = useState('all')
-  const [dateFilter, setDateFilter] = useState('all')
   const [dataSource, setDataSource] = useState('demo')
+  const [sortOrder, setSortOrder] = useState('newest')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const url =
-      dataSource === 'demo'
-        ? 'http://localhost:5059/api/events'
-        : 'http://localhost:5059/api/events/from-rss'
+  const url =
+    dataSource === 'demo'
+      ? 'http://localhost:5059/api/events'
+      : 'http://localhost:5059/api/sources/events'
 
-    setLoading(true)
+  console.log('DATA SOURCE =', dataSource)
+  console.log('REQUEST URL =', url)
 
-    axios
-      .get(url)
-      .then((res) => setEvents(res.data))
+  setLoading(true)
+
+  axios
+    .get(url)
+    .then((res) => {
+      console.log('RESPONSE DATA =', res.data)
+      setEvents(res.data)
+    })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false))
   }, [dataSource])
 
   const filteredEvents = useMemo(() => {
-    let result = events
-    const now = new Date()
+    let result = [...events]
 
     if (selectedType !== 'all') {
       result = result.filter((event) => event.eventType === selectedType)
     }
 
-    if (dateFilter === 'today') {
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom)
+      fromDate.setHours(0, 0, 0, 0)
+
       result = result.filter((event) => {
         const eventDate = new Date(event.date)
-        return eventDate.toDateString() === now.toDateString()
+        return eventDate >= fromDate
       })
     }
 
-    if (dateFilter === '7days') {
+    if (dateTo) {
+      const toDate = new Date(dateTo)
+      toDate.setHours(23, 59, 59, 999)
+
       result = result.filter((event) => {
         const eventDate = new Date(event.date)
-        const diffInDays = (now - eventDate) / (1000 * 60 * 60 * 24)
-        return diffInDays <= 7
+        return eventDate <= toDate
       })
     }
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.date)
+      const dateB = new Date(b.date)
+
+      if (sortOrder === 'oldest') {
+        return dateA - dateB
+      }
+
+      return dateB - dateA
+    })
 
     return result
-  }, [events, selectedType, dateFilter])
+  }, [events, selectedType, dateFrom, dateTo, sortOrder])
 
   return (
     <div style={{ height: '100vh', width: '100%' }}>
@@ -134,7 +157,7 @@ function App() {
           padding: '12px 14px',
           borderRadius: '12px',
           boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
-          minWidth: '240px',
+          minWidth: '260px',
         }}
       >
         <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
@@ -146,7 +169,7 @@ function App() {
         </div>
 
         <div style={{ marginBottom: '10px', fontSize: '14px', color: '#444' }}>
-          {loading ? 'Загрузка данных...' : `Режим: ${dataSource === 'demo' ? 'Demo' : 'Real RSS'}`}
+          `Режим: ${dataSource === 'demo' ? 'Demo' : 'Live sources'}`
         </div>
 
         <label style={{ display: 'block', marginBottom: '6px' }}>
@@ -165,7 +188,7 @@ function App() {
           }}
         >
           <option value="demo">Demo data</option>
-          <option value="rss">Real RSS</option>
+          <option value="rss">Live sources</option>
         </select>
 
         <label style={{ display: 'block', marginBottom: '6px' }}>
@@ -194,23 +217,79 @@ function App() {
         </select>
 
         <label style={{ display: 'block', marginBottom: '6px' }}>
-          Дата
+          Дата от
         </label>
 
-        <select
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
           style={{
             width: '100%',
             padding: '8px',
             borderRadius: '8px',
             border: '1px solid #ccc',
+            marginBottom: '10px',
+            boxSizing: 'border-box',
+          }}
+        />
+
+        <label style={{ display: 'block', marginBottom: '6px' }}>
+          Дата до
+        </label>
+
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '8px',
+            borderRadius: '8px',
+            border: '1px solid #ccc',
+            marginBottom: '10px',
+            boxSizing: 'border-box',
+          }}
+        />
+
+        <label style={{ display: 'block', marginBottom: '6px' }}>
+          Сортировка
+        </label>
+
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '8px',
+            borderRadius: '8px',
+            border: '1px solid #ccc',
+            marginBottom: '10px',
           }}
         >
-          <option value="all">Все</option>
-          <option value="today">Сегодня</option>
-          <option value="7days">Последние 7 дней</option>
+          <option value="newest">Сначала новые</option>
+          <option value="oldest">Сначала старые</option>
         </select>
+
+        <button
+          onClick={() => {
+            setSelectedType('all')
+            setDateFrom('')
+            setDateTo('')
+            setSortOrder('newest')
+          }}
+          style={{
+            width: '100%',
+            padding: '10px',
+            borderRadius: '8px',
+            border: 'none',
+            background: '#222',
+            color: 'white',
+            cursor: 'pointer',
+          }}
+        >
+          Сбросить фильтры
+        </button>
       </div>
 
       <MapContainer

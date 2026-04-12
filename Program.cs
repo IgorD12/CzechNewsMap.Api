@@ -1,11 +1,26 @@
 using CzechNewsMap.Api.Models;
 using CzechNewsMap.Api.Services;
+using CzechNewsMap.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHttpClient<PoliciePrahaSourceService>();
+builder.Services.AddScoped<ISourceService, PoliciePrahaSourceService>();
+
 builder.Services.AddControllers();
+builder.Services.AddSingleton<RssEventMapper>();
+
+builder.Services.AddScoped<ArticleDedupService>();
+builder.Services.AddScoped<ISourceService, IdnesSourceService>();
 
 builder.Services.AddSingleton<RssEventMapper>();
+builder.Services.AddScoped<ArticleDedupService>();
+
+builder.Services.AddScoped<ISourceService, IdnesSourceService>();
+builder.Services.AddScoped<ISourceService, PoliciePrahaSourceService>();
+
+builder.Services.AddHttpClient<RssService>();
+builder.Services.AddHttpClient<PoliciePrahaSourceService>();
 
 builder.Services.AddCors(options =>
 {

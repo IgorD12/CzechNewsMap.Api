@@ -21,14 +21,14 @@ public class RssEventMapper
 
         return new NewsEvent
         {
-            Title = article.Title,
-            SourceName = article.SourceName,
-            SourceUrl = article.Link,
+            Title = article.Title ?? "",
+            SourceName = article.SourceName ?? "",
+            SourceUrl = article.Link ?? "",
             Latitude = location.Value.lat,
             Longitude = location.Value.lng,
             EventType = eventType,
             Date = article.PublishedAt
-        };
+    };
     }
 
     private bool IsIncidentNews(string text)
