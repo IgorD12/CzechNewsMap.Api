@@ -20,4 +20,20 @@ public class EventsController : ControllerBase
         var events = _eventService.GetEvents();
         return Ok(events);
     }
+
+    [HttpGet("from-rss")]
+    public async Task<IActionResult> GetFromRss(
+        [FromServices] RssService rssService,
+        [FromServices] RssEventMapper mapper)
+    {
+        var articles = await rssService.GetLatestArticlesAsync(30);
+
+        var events = articles
+            .Select(a => mapper.MapToEvent(a))
+            .Where(e => e != null)
+            .ToList();
+
+        return Ok(events);
+    }
 }
+

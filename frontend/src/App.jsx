@@ -81,7 +81,7 @@ function App() {
 
   useEffect(() => {
     axios
-      .get('http://localhost:5059/api/events')
+      .get('http://localhost:5059/api/events/from-rss')
       .then((res) => setEvents(res.data))
       .catch((err) => console.error(err))
   }, [])

@@ -35,7 +35,7 @@ public class RssService
         {
             return new List<RssArticle>();
         }
-
+        
         var articles = feed.Items
             .Take(maxItems)
             .Select(item => new RssArticle
