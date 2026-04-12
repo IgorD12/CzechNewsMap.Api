@@ -78,13 +78,23 @@ function App() {
   const [events, setEvents] = useState([])
   const [selectedType, setSelectedType] = useState('all')
   const [dateFilter, setDateFilter] = useState('all')
+  const [dataSource, setDataSource] = useState('demo')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    const url =
+      dataSource === 'demo'
+        ? 'http://localhost:5059/api/events'
+        : 'http://localhost:5059/api/events/from-rss'
+
+    setLoading(true)
+
     axios
-      .get('http://localhost:5059/api/events/from-rss')
+      .get(url)
       .then((res) => setEvents(res.data))
       .catch((err) => console.error(err))
-  }, [])
+      .finally(() => setLoading(false))
+  }, [dataSource])
 
   const filteredEvents = useMemo(() => {
     let result = events
@@ -124,7 +134,7 @@ function App() {
           padding: '12px 14px',
           borderRadius: '12px',
           boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
-          minWidth: '220px',
+          minWidth: '240px',
         }}
       >
         <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
@@ -134,6 +144,29 @@ function App() {
         <div style={{ marginBottom: '8px' }}>
           Событий: {filteredEvents.length}
         </div>
+
+        <div style={{ marginBottom: '10px', fontSize: '14px', color: '#444' }}>
+          {loading ? 'Загрузка данных...' : `Режим: ${dataSource === 'demo' ? 'Demo' : 'Real RSS'}`}
+        </div>
+
+        <label style={{ display: 'block', marginBottom: '6px' }}>
+          Источник данных
+        </label>
+
+        <select
+          value={dataSource}
+          onChange={(e) => setDataSource(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '8px',
+            borderRadius: '8px',
+            border: '1px solid #ccc',
+            marginBottom: '10px',
+          }}
+        >
+          <option value="demo">Demo data</option>
+          <option value="rss">Real RSS</option>
+        </select>
 
         <label style={{ display: 'block', marginBottom: '6px' }}>
           Тип события
