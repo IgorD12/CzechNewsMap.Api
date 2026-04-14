@@ -10,8 +10,8 @@ public class RssEventMapper
         var summary = (article.Summary ?? "").ToLower();
         var fullText = title + " " + summary;
 
-        if (!IsIncidentNews(fullText))
-            return null;
+        // if (!IsIncidentNews(fullText))
+        //     return null;
 
         var location = GetLocation(title) ?? GetLocation(summary);
         if (location == null)

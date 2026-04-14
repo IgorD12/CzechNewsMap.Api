@@ -23,32 +23,31 @@ public class SourcesController : ControllerBase
     }
 
     [HttpGet("events")]
-[HttpGet("events")]
-public async Task<ActionResult<List<NewsEvent>>> GetEvents()
-{
-    var allArticles = new List<SourceArticle>();
-
-    foreach (var source in _sources)
+    public async Task<ActionResult<List<NewsEvent>>> GetEvents()
     {
-        var articles = await source.GetArticlesAsync();
-        allArticles.AddRange(articles);
-    }
+        var allArticles = new List<SourceArticle>();
 
-    var deduplicated = _dedupService.Deduplicate(allArticles);
-
-    var events = deduplicated
-        .Select(a => _mapper.MapToEvent(new RssArticle
+        foreach (var source in _sources)
         {
-            Title = a.Title,
-            Link = a.Link,
-            PublishedAt = a.PublishedAt,
-            SourceName = a.SourceName,
-            Summary = a.Summary
-        }))
-        .Where(e => e != null)
-        .Cast<NewsEvent>()
-        .ToList();
+            var articles = await source.GetArticlesAsync();
+            allArticles.AddRange(articles);
+        }
 
-    return Ok(events);
-}
+        var deduplicated = _dedupService.Deduplicate(allArticles);
+
+        var events = deduplicated
+            .Select(a => _mapper.MapToEvent(new RssArticle
+            {
+                Title = a.Title,
+                Link = a.Link,
+                PublishedAt = a.PublishedAt,
+                SourceName = a.SourceName,
+                Summary = a.Summary
+            }))
+            .Where(e => e != null)
+            .Cast<NewsEvent>()
+            .ToList();
+
+        return Ok(events);
+    }
 }
