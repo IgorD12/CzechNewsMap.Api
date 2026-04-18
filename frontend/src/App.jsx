@@ -54,9 +54,9 @@ function ClusterLayer({ events }) {
         <div style="min-width: 220px">
           <b>${event.title}</b><br/>
           <span>${event.sourceName}</span><br/>
-          <span>Тип: ${event.eventType}</span><br/>
-          <span>Дата: ${new Date(event.date).toLocaleDateString()}</span><br/><br/>
-          <a href="${event.sourceUrl}" target="_blank">Открыть источник</a>
+          <span>Typ: ${event.eventType}</span><br/>
+          <span>Datum: ${new Date(event.date).toLocaleDateString()}</span><br/><br/>
+          <a href="${event.sourceUrl}" target="_blank">Otevřít zdroj</a>
         </div>
       `)
 
@@ -143,7 +143,7 @@ function App() {
         gridTemplateColumns: '280px 1fr 340px',
       }}
     >
-      {/* ЛЕВАЯ ПАНЕЛЬ */}
+      {/* LEVÝ PANEL */}
       <div
         style={{
           overflowY: 'auto',
@@ -152,36 +152,36 @@ function App() {
         }}
       >
         <h2>Czech News Map</h2>
-        <div>Событий: {filteredEvents.length}</div>
+        <div>Počet událostí: {filteredEvents.length}</div>
 
         <div style={{ marginTop: '10px' }}>
-          <label>Источник</label>
+          <label>Zdroj</label>
           <select
             value={dataSource}
             onChange={(e) => setDataSource(e.target.value)}
             style={{ width: '100%' }}
           >
-            <option value="rss">Live sources</option>
+            <option value="rss">Živé zdroje</option>
             <option value="demo">Demo</option>
           </select>
         </div>
 
         <div style={{ marginTop: '10px' }}>
-          <label>Тип</label>
+          <label>Typ</label>
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
             style={{ width: '100%' }}
           >
-            <option value="all">Все</option>
+            <option value="all">Vše</option>
             <option value="unknown">Unknown</option>
-            <option value="fire">Fire</option>
-            <option value="arrest">Arrest</option>
+            <option value="fire">Požár</option>
+            <option value="arrest">Zatčení</option>
           </select>
         </div>
 
         <div style={{ marginTop: '10px' }}>
-          <label>Дата от</label>
+          <label>Datum od</label>
           <input
             type="date"
             value={dateFrom}
@@ -191,7 +191,7 @@ function App() {
         </div>
 
         <div style={{ marginTop: '10px' }}>
-          <label>Дата до</label>
+          <label>Datum do</label>
           <input
             type="date"
             value={dateTo}
@@ -201,14 +201,14 @@ function App() {
         </div>
 
         <div style={{ marginTop: '10px' }}>
-          <label>Сортировка</label>
+          <label>Řazení</label>
           <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
             style={{ width: '100%' }}
           >
-            <option value="newest">Новые</option>
-            <option value="oldest">Старые</option>
+            <option value="newest">Od nejnovějších</option>
+            <option value="oldest">Od nejstarších</option>
           </select>
         </div>
 
@@ -220,11 +220,11 @@ function App() {
             setDateTo('')
           }}
         >
-          Сброс
+          Resetovat filtry
         </button>
       </div>
 
-      {/* КАРТА */}
+      {/* MAPA */}
       <div>
         <MapContainer
           center={[49.8, 15.5]}
@@ -236,7 +236,7 @@ function App() {
         </MapContainer>
       </div>
 
-      {/* ПРАВАЯ ПАНЕЛЬ */}
+      {/* PRAVÝ PANEL */}
       <div
         style={{
           overflowY: 'auto',
@@ -244,7 +244,7 @@ function App() {
           borderLeft: '1px solid #ddd',
         }}
       >
-        <h2>События</h2>
+        <h2>Události</h2>
 
         {filteredEvents.map((event, i) => (
           <div key={i} style={{ marginBottom: '15px' }}>
@@ -252,7 +252,7 @@ function App() {
             <div>{event.sourceName}</div>
             <div>{new Date(event.date).toLocaleDateString()}</div>
             <a href={event.sourceUrl} target="_blank">
-              Открыть
+              Otevřít zdroj
             </a>
           </div>
         ))}
