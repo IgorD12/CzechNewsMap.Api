@@ -22,21 +22,20 @@ function getEventIcon(eventType) {
 
   return L.divIcon({
     html: `<div style="
-      font-size: 20px;
-      width: 28px;
-      height: 28px;
+      font-size: 18px;
+      width: 30px;
+      height: 30px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: white;
       border: 2px solid #333;
       border-radius: 50%;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
     ">${symbol}</div>`,
     className: '',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -14],
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
   })
 }
 
@@ -57,7 +56,7 @@ function ClusterLayer({ events }) {
           <span>${event.sourceName}</span><br/>
           <span>Тип: ${event.eventType}</span><br/>
           <span>Дата: ${new Date(event.date).toLocaleDateString()}</span><br/><br/>
-          <a href="${event.sourceUrl}" target="_blank" rel="noopener noreferrer">Открыть источник</a>
+          <a href="${event.sourceUrl}" target="_blank">Открыть источник</a>
         </div>
       `)
 
@@ -77,29 +76,23 @@ function ClusterLayer({ events }) {
 function App() {
   const [events, setEvents] = useState([])
   const [selectedType, setSelectedType] = useState('all')
-  const [dataSource, setDataSource] = useState('demo')
+  const [dataSource, setDataSource] = useState('rss')
   const [sortOrder, setSortOrder] = useState('newest')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-  const url =
-    dataSource === 'demo'
-      ? 'http://localhost:5059/api/events'
-      : 'http://localhost:5059/api/sources/events'
+    const url =
+      dataSource === 'demo'
+        ? 'http://localhost:5059/api/events'
+        : 'http://localhost:5059/api/sources/events'
 
-  console.log('DATA SOURCE =', dataSource)
-  console.log('REQUEST URL =', url)
+    setLoading(true)
 
-  setLoading(true)
-
-  axios
-    .get(url)
-    .then((res) => {
-      console.log('RESPONSE DATA =', res.data)
-      setEvents(res.data)
-    })
+    axios
+      .get(url)
+      .then((res) => setEvents(res.data))
       .catch((err) => console.error(err))
       .finally(() => setLoading(false))
   }, [dataSource])
@@ -135,171 +128,135 @@ function App() {
       const dateA = new Date(a.date)
       const dateB = new Date(b.date)
 
-      if (sortOrder === 'oldest') {
-        return dateA - dateB
-      }
-
-      return dateB - dateA
+      return sortOrder === 'oldest' ? dateA - dateB : dateB - dateA
     })
 
     return result
   }, [events, selectedType, dateFrom, dateTo, sortOrder])
 
   return (
-    <div style={{ height: '100vh', width: '100%' }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        display: 'grid',
+        gridTemplateColumns: '280px 1fr 340px',
+      }}
+    >
+      {/* ЛЕВАЯ ПАНЕЛЬ */}
       <div
         style={{
-          position: 'absolute',
-          top: 16,
-          left: 16,
-          zIndex: 1000,
-          background: 'white',
-          padding: '12px 14px',
-          borderRadius: '12px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
-          minWidth: '260px',
+          overflowY: 'auto',
+          padding: '16px',
+          borderRight: '1px solid #ddd',
         }}
       >
-        <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
-          Czech News Map
+        <h2>Czech News Map</h2>
+        <div>Событий: {filteredEvents.length}</div>
+
+        <div style={{ marginTop: '10px' }}>
+          <label>Источник</label>
+          <select
+            value={dataSource}
+            onChange={(e) => setDataSource(e.target.value)}
+            style={{ width: '100%' }}
+          >
+            <option value="rss">Live sources</option>
+            <option value="demo">Demo</option>
+          </select>
         </div>
 
-        <div style={{ marginBottom: '8px' }}>
-          Событий: {filteredEvents.length}
+        <div style={{ marginTop: '10px' }}>
+          <label>Тип</label>
+          <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            style={{ width: '100%' }}
+          >
+            <option value="all">Все</option>
+            <option value="unknown">Unknown</option>
+            <option value="fire">Fire</option>
+            <option value="arrest">Arrest</option>
+          </select>
         </div>
 
-        <div style={{ marginBottom: '10px', fontSize: '14px', color: '#444' }}>
-          `Режим: ${dataSource === 'demo' ? 'Demo' : 'Live sources'}`
+        <div style={{ marginTop: '10px' }}>
+          <label>Дата от</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            style={{ width: '100%' }}
+          />
         </div>
 
-        <label style={{ display: 'block', marginBottom: '6px' }}>
-          Источник данных
-        </label>
+        <div style={{ marginTop: '10px' }}>
+          <label>Дата до</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            style={{ width: '100%' }}
+          />
+        </div>
 
-        <select
-          value={dataSource}
-          onChange={(e) => setDataSource(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '8px',
-            borderRadius: '8px',
-            border: '1px solid #ccc',
-            marginBottom: '10px',
-          }}
-        >
-          <option value="demo">Demo data</option>
-          <option value="rss">Live sources</option>
-        </select>
-
-        <label style={{ display: 'block', marginBottom: '6px' }}>
-          Тип события
-        </label>
-
-        <select
-          value={selectedType}
-          onChange={(e) => setSelectedType(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '8px',
-            borderRadius: '8px',
-            border: '1px solid #ccc',
-            marginBottom: '10px',
-          }}
-        >
-          <option value="all">Все</option>
-          <option value="stabbing">Stabbing</option>
-          <option value="shooting">Shooting</option>
-          <option value="arrest">Arrest</option>
-          <option value="fight">Fight</option>
-          <option value="robbery">Robbery</option>
-          <option value="fire">Fire</option>
-          <option value="unknown">Unknown</option>
-        </select>
-
-        <label style={{ display: 'block', marginBottom: '6px' }}>
-          Дата от
-        </label>
-
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '8px',
-            borderRadius: '8px',
-            border: '1px solid #ccc',
-            marginBottom: '10px',
-            boxSizing: 'border-box',
-          }}
-        />
-
-        <label style={{ display: 'block', marginBottom: '6px' }}>
-          Дата до
-        </label>
-
-        <input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '8px',
-            borderRadius: '8px',
-            border: '1px solid #ccc',
-            marginBottom: '10px',
-            boxSizing: 'border-box',
-          }}
-        />
-
-        <label style={{ display: 'block', marginBottom: '6px' }}>
-          Сортировка
-        </label>
-
-        <select
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '8px',
-            borderRadius: '8px',
-            border: '1px solid #ccc',
-            marginBottom: '10px',
-          }}
-        >
-          <option value="newest">Сначала новые</option>
-          <option value="oldest">Сначала старые</option>
-        </select>
+        <div style={{ marginTop: '10px' }}>
+          <label>Сортировка</label>
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            style={{ width: '100%' }}
+          >
+            <option value="newest">Новые</option>
+            <option value="oldest">Старые</option>
+          </select>
+        </div>
 
         <button
+          style={{ marginTop: '10px', width: '100%' }}
           onClick={() => {
             setSelectedType('all')
             setDateFrom('')
             setDateTo('')
-            setSortOrder('newest')
-          }}
-          style={{
-            width: '100%',
-            padding: '10px',
-            borderRadius: '8px',
-            border: 'none',
-            background: '#222',
-            color: 'white',
-            cursor: 'pointer',
           }}
         >
-          Сбросить фильтры
+          Сброс
         </button>
       </div>
 
-      <MapContainer
-        center={[49.8, 15.5]}
-        zoom={7}
-        style={{ height: '100vh', width: '100%' }}
+      {/* КАРТА */}
+      <div>
+        <MapContainer
+          center={[49.8, 15.5]}
+          zoom={7}
+          style={{ width: '100%', height: '100%' }}
+        >
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <ClusterLayer events={filteredEvents} />
+        </MapContainer>
+      </div>
+
+      {/* ПРАВАЯ ПАНЕЛЬ */}
+      <div
+        style={{
+          overflowY: 'auto',
+          padding: '16px',
+          borderLeft: '1px solid #ddd',
+        }}
       >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <ClusterLayer events={filteredEvents} />
-      </MapContainer>
+        <h2>События</h2>
+
+        {filteredEvents.map((event, i) => (
+          <div key={i} style={{ marginBottom: '15px' }}>
+            <b>{event.title}</b>
+            <div>{event.sourceName}</div>
+            <div>{new Date(event.date).toLocaleDateString()}</div>
+            <a href={event.sourceUrl} target="_blank">
+              Открыть
+            </a>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
