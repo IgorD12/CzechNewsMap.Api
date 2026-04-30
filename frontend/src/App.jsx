@@ -105,25 +105,18 @@ function App() {
     }
 
     if (dateFrom) {
-      const fromDate = new Date(dateFrom)
-      fromDate.setHours(0, 0, 0, 0)
-
       result = result.filter((event) => {
-        const eventDate = new Date(event.date)
-        return eventDate >= fromDate
-      })
-    }
+      const eventDay = new Date(event.date).toISOString().slice(0, 10)
+      return eventDay >= dateFrom
+    })
+  }
 
     if (dateTo) {
-      const toDate = new Date(dateTo)
-      toDate.setHours(23, 59, 59, 999)
-
       result = result.filter((event) => {
-        const eventDate = new Date(event.date)
-        return eventDate <= toDate
-      })
-    }
-
+      const eventDay = new Date(event.date).toISOString().slice(0, 10)
+      return eventDay <= dateTo
+    })
+  }
     result.sort((a, b) => {
       const dateA = new Date(a.date)
       const dateB = new Date(b.date)

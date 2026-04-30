@@ -9,6 +9,9 @@ builder.Services.AddSingleton<RssEventMapper>();
 builder.Services.AddScoped<ArticleDedupService>();
 
 builder.Services.AddScoped<ISourceService, IdnesSourceService>();
+
+builder.Services.AddHttpClient<NovinkySourceService>();
+builder.Services.AddScoped<ISourceService, NovinkySourceService>();
 // builder.Services.AddScoped<ISourceService, PoliciePrahaSourceService>(); // пока можно выключить
 
 builder.Services.AddCors(options =>
