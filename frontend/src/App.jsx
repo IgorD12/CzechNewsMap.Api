@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer } from 'react-leaflet'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import L from 'leaflet'
 import 'leaflet.markercluster'
@@ -373,7 +373,7 @@ function NewsCard({ event }) {
   )
 }
 
-function NewsList({ error, events, loading }) {
+function NewsList({ error, events, loading, onRetry }) {
   return (
     <section className="list-panel" aria-label="Seznam zpráv">
       <div className="panel-heading">
@@ -383,7 +383,15 @@ function NewsList({ error, events, loading }) {
         </div>
       </div>
 
-      {error && <div className="error-state">{error}</div>}
+      {error && (
+        <div className="error-state">
+          <strong>Nepodařilo se načíst zprávy</strong>
+          <span>{error}</span>
+          <button type="button" onClick={onRetry} disabled={loading}>
+            Zkusit znovu
+          </button>
+        </div>
+      )}
       {loading && <div className="empty-state">Načítám aktuální zprávy...</div>}
       {!loading && !error && events.length === 0 && (
         <div className="empty-state">Žádné zprávy neodpovídají aktuálním filtrům.</div>
@@ -422,22 +430,27 @@ function App() {
     }
   }, [themeMode])
 
-  useEffect(() => {
+  const loadEvents = useCallback((options = {}) => {
     const url = dataSource === 'demo' ? getApiUrl('/api/events') : getApiUrl('/api/sources/events')
+    const requestConfig = options.refresh ? { params: { refresh: true } } : undefined
 
     setLoading(true)
     setError('')
 
     axios
-      .get(url)
+      .get(url, requestConfig)
       .then((res) => setEvents(res.data))
       .catch((err) => {
         console.error(err)
         setEvents([])
-        setError('Nepodařilo se načíst zprávy.')
+        setError('Zkontrolujte připojení k API nebo to zkuste znovu.')
       })
       .finally(() => setLoading(false))
   }, [dataSource])
+
+  useEffect(() => {
+    loadEvents()
+  }, [loadEvents])
 
   const categoryCounts = useMemo(() => {
     return events.reduce((counts, event) => {
@@ -566,7 +579,7 @@ function App() {
         </MapContainer>
       </main>
 
-      <NewsList error={error} events={filteredEvents} loading={loading} />
+      <NewsList error={error} events={filteredEvents} loading={loading} onRetry={() => loadEvents({ refresh: true })} />
     </div>
   )
 }

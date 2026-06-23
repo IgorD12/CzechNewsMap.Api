@@ -1,6 +1,7 @@
 using CzechNewsMap.Api.Models;
 using CzechNewsMap.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace CzechNewsMap.Api.Controllers;
 
@@ -8,24 +9,18 @@ namespace CzechNewsMap.Api.Controllers;
 [Route("api/[controller]")]
 public class SourcesController : ControllerBase
 {
-    private readonly IEnumerable<ISourceService> _sources;
-    private readonly ArticleDedupService _dedupService;
-    private readonly RssEventMapper _mapper;
+    private readonly CachedSourceEventService _eventCache;
     private readonly SourceDiagnosticsService _diagnosticsService;
-    private readonly ILogger<SourcesController> _logger;
+    private readonly SourceCacheOptions _cacheOptions;
 
     public SourcesController(
-        IEnumerable<ISourceService> sources,
-        ArticleDedupService dedupService,
-        RssEventMapper mapper,
+        CachedSourceEventService eventCache,
         SourceDiagnosticsService diagnosticsService,
-        ILogger<SourcesController> logger)
+        IOptions<SourceCacheOptions> cacheOptions)
     {
-        _sources = sources;
-        _dedupService = dedupService;
-        _mapper = mapper;
+        _eventCache = eventCache;
         _diagnosticsService = diagnosticsService;
-        _logger = logger;
+        _cacheOptions = cacheOptions.Value;
     }
 
     [HttpGet("diagnostics")]
@@ -36,37 +31,14 @@ public class SourcesController : ControllerBase
     }
 
     [HttpGet("events")]
-    public async Task<ActionResult<List<NewsEvent>>> GetEvents()
+    public async Task<ActionResult<List<NewsEvent>>> GetEvents([FromQuery] bool refresh = false)
     {
-        var allArticles = new List<SourceArticle>();
+        var events = await _eventCache.GetEventsAsync(refresh, HttpContext.RequestAborted);
+        var browserCacheSeconds = Math.Max(0, _cacheOptions.BrowserCacheSeconds);
 
-        foreach (var source in _sources)
-        {
-            try
-            {
-                var articles = await source.GetArticlesAsync();
-                allArticles.AddRange(articles);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Source {SourceType} failed while loading events.", source.GetType().Name);
-            }
-        }
-
-        var deduplicated = _dedupService.Deduplicate(allArticles);
-
-        var events = deduplicated
-            .Select(a => _mapper.MapToEvent(new RssArticle
-            {
-                Title = a.Title,
-                Link = a.Link,
-                PublishedAt = a.PublishedAt,
-                SourceName = a.SourceName,
-                Summary = a.Summary
-            }))
-            .Where(e => e != null)
-            .Cast<NewsEvent>()
-            .ToList();
+        Response.Headers.CacheControl = refresh || browserCacheSeconds == 0
+            ? "no-store"
+            : $"public, max-age={browserCacheSeconds}";
 
         return Ok(events);
     }

@@ -66,3 +66,17 @@ The application is still under development, and some parts are not yet fully opt
 
 ``bash
 dotnet run
+
+## Production hosting notes
+
+Backend:
+- `/health` returns a simple API health response for hosting checks.
+- `Frontend:AllowedOrigins` should contain the exact public frontend origins, for example `https://news-map.example.com`.
+- `SourceCache:DurationMinutes` controls how long aggregated RSS events stay cached in memory.
+- `SourceCache:BrowserCacheSeconds` controls the short browser/proxy cache header for `/api/sources/events`.
+- Environment variable example for ASP.NET Core: `Frontend__AllowedOrigins__0=https://news-map.example.com`.
+
+Frontend:
+- Use `frontend/.env.production.example` as a template.
+- Set `VITE_API_BASE_URL` to the public backend URL when API and frontend are hosted on different domains.
+- Leave `VITE_API_BASE_URL` empty when both are served from the same origin.
