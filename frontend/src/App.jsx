@@ -10,6 +10,19 @@ import './App.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
+const MAP_LAYERS = {
+  standard: {
+    label: 'Klasická',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; OpenStreetMap contributors',
+  },
+  satellite: {
+    label: 'Satelitní',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri',
+  },
+}
+
 const EVENT_TYPES = [
   { value: 'all', label: 'Vše', icon: '🗺️' },
   { value: 'general', label: 'Obecné zprávy', icon: '📰' },
@@ -61,6 +74,23 @@ function formatDate(value) {
     month: '2-digit',
     year: 'numeric',
   }).format(new Date(value))
+}
+
+function buildCountOptions(events, getValue) {
+  const counts = events.reduce((result, event) => {
+    const value = getValue(event)
+
+    if (!value) {
+      return result
+    }
+
+    result[value] = (result[value] ?? 0) + 1
+    return result
+  }, {})
+
+  return Object.entries(counts)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'cs-CZ'))
 }
 
 function getEventIcon(eventType) {
@@ -130,20 +160,30 @@ function ClusterLayer({ events }) {
 
 function FilterPanel({
   categoryCounts,
+  cityOptions,
   dataSource,
   dateFrom,
   dateTo,
   loading,
+  mapLayer,
   onDataSourceChange,
   onDateFromChange,
   onDateToChange,
   onResetFilters,
+  onMapLayerChange,
   onSearchChange,
+  onSelectedCityChange,
+  onSelectedSourceChange,
   onSelectedTypeChange,
   onSortOrderChange,
+  onThemeModeChange,
   search,
+  selectedCity,
+  selectedSource,
   selectedType,
   sortOrder,
+  sourceOptions,
+  themeMode,
   totalEvents,
   visibleEvents,
 }) {
@@ -169,9 +209,51 @@ function FilterPanel({
 
       {loading && <div className="status-pill">Načítám zprávy...</div>}
 
+      <div className="mode-grid">
+        <div className="mode-control">
+          <span>Motiv</span>
+          <div className="segmented-control" role="group" aria-label="Motiv aplikace">
+            <button
+              className={themeMode === 'dark' ? 'is-selected' : ''}
+              type="button"
+              onClick={() => onThemeModeChange('dark')}
+            >
+              Tmavý
+            </button>
+            <button
+              className={themeMode === 'light' ? 'is-selected' : ''}
+              type="button"
+              onClick={() => onThemeModeChange('light')}
+            >
+              Světlý
+            </button>
+          </div>
+        </div>
+
+        <div className="mode-control">
+          <span>Mapa</span>
+          <div className="segmented-control" role="group" aria-label="Vrstva mapy">
+            <button
+              className={mapLayer === 'standard' ? 'is-selected' : ''}
+              type="button"
+              onClick={() => onMapLayerChange('standard')}
+            >
+              Klasická
+            </button>
+            <button
+              className={mapLayer === 'satellite' ? 'is-selected' : ''}
+              type="button"
+              onClick={() => onMapLayerChange('satellite')}
+            >
+              Satelitní
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="form-grid">
         <label className="field">
-          <span>Zdroj</span>
+          <span>Data</span>
           <select value={dataSource} onChange={(e) => onDataSourceChange(e.target.value)}>
             <option value="rss">Živé zdroje</option>
             <option value="demo">Demo</option>
@@ -184,6 +266,30 @@ function FilterPanel({
             {EVENT_TYPES.map((type) => (
               <option key={type.value} value={type.value}>
                 {type.icon} {type.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span>Médium</span>
+          <select value={selectedSource} onChange={(e) => onSelectedSourceChange(e.target.value)}>
+            <option value="all">Všechna média</option>
+            {sourceOptions.map((source) => (
+              <option key={source.name} value={source.name}>
+                {source.name} ({source.count})
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span>Město</span>
+          <select value={selectedCity} onChange={(e) => onSelectedCityChange(e.target.value)}>
+            <option value="all">Všechna města</option>
+            {cityOptions.map((city) => (
+              <option key={city.name} value={city.name}>
+                {city.name} ({city.count})
               </option>
             ))}
           </select>
@@ -295,6 +401,8 @@ function NewsList({ error, events, loading }) {
 function App() {
   const [events, setEvents] = useState([])
   const [selectedType, setSelectedType] = useState('all')
+  const [selectedSource, setSelectedSource] = useState('all')
+  const [selectedCity, setSelectedCity] = useState('all')
   const [dataSource, setDataSource] = useState('rss')
   const [sortOrder, setSortOrder] = useState('newest')
   const [dateFrom, setDateFrom] = useState('')
@@ -303,6 +411,16 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [activeMobileView, setActiveMobileView] = useState('map')
+  const [themeMode, setThemeMode] = useState('dark')
+  const [mapLayer, setMapLayer] = useState('standard')
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = themeMode
+
+    return () => {
+      delete document.documentElement.dataset.theme
+    }
+  }, [themeMode])
 
   useEffect(() => {
     const url = dataSource === 'demo' ? getApiUrl('/api/events') : getApiUrl('/api/sources/events')
@@ -328,12 +446,23 @@ function App() {
     }, {})
   }, [events])
 
+  const sourceOptions = useMemo(() => buildCountOptions(events, (event) => event.sourceName), [events])
+  const cityOptions = useMemo(() => buildCountOptions(events, (event) => event.locationName), [events])
+
   const filteredEvents = useMemo(() => {
     let result = [...events]
     const normalizedSearch = search.trim().toLowerCase()
 
     if (selectedType !== 'all') {
       result = result.filter((event) => event.eventType === selectedType)
+    }
+
+    if (selectedSource !== 'all') {
+      result = result.filter((event) => event.sourceName === selectedSource)
+    }
+
+    if (selectedCity !== 'all') {
+      result = result.filter((event) => event.locationName === selectedCity)
     }
 
     if (normalizedSearch) {
@@ -366,31 +495,49 @@ function App() {
     })
 
     return result
-  }, [dateFrom, dateTo, events, search, selectedType, sortOrder])
+  }, [dateFrom, dateTo, events, search, selectedCity, selectedSource, selectedType, sortOrder])
+
+  const tileLayer = MAP_LAYERS[mapLayer] ?? MAP_LAYERS.standard
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-theme={themeMode}>
       <FilterPanel
         categoryCounts={categoryCounts}
+        cityOptions={cityOptions}
         dataSource={dataSource}
         dateFrom={dateFrom}
         dateTo={dateTo}
         loading={loading}
-        onDataSourceChange={setDataSource}
+        mapLayer={mapLayer}
+        onDataSourceChange={(value) => {
+          setDataSource(value)
+          setSelectedSource('all')
+          setSelectedCity('all')
+        }}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
+        onMapLayerChange={setMapLayer}
         onResetFilters={() => {
           setSelectedType('all')
           setDateFrom('')
           setDateTo('')
           setSearch('')
+          setSelectedSource('all')
+          setSelectedCity('all')
         }}
         onSearchChange={setSearch}
+        onSelectedCityChange={setSelectedCity}
+        onSelectedSourceChange={setSelectedSource}
         onSelectedTypeChange={setSelectedType}
         onSortOrderChange={setSortOrder}
+        onThemeModeChange={setThemeMode}
         search={search}
+        selectedCity={selectedCity}
+        selectedSource={selectedSource}
         selectedType={selectedType}
         sortOrder={sortOrder}
+        sourceOptions={sourceOptions}
+        themeMode={themeMode}
         totalEvents={events.length}
         visibleEvents={filteredEvents.length}
       />
@@ -414,7 +561,7 @@ function App() {
 
       <main className={activeMobileView === 'map' ? 'map-panel is-active' : 'map-panel'}>
         <MapContainer center={[49.8, 15.5]} zoom={7} className="map-canvas">
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer key={mapLayer} attribution={tileLayer.attribution} url={tileLayer.url} />
           <ClusterLayer events={filteredEvents} />
         </MapContainer>
       </main>

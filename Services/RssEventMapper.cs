@@ -57,14 +57,15 @@ public class RssEventMapper
         if (ContainsAny(normalized, "umělá inteligence", "umela inteligence", "ai olymp", "technolog", "věda", "výzkum", "robot", "kyber", "digital", "aplikace", "software"))
             return "technology";
 
+        if (ContainsAny(normalized, "ekologi", "klima", "emis", "elektrár", "energet", "větrn", "přírod", "životní prostředí", "uhlí", "solár"))
+            return "environment";
+
         if (ContainsAny(normalized, "počasí", "bouř", "vítr", "déšť", "sníh", "povodeň", "vedr", "mráz", "tropick", "meteorolog"))
             return "weather";
 
         if (ContainsAny(normalized, "nemocnic", "lékař", "zdravot", "pacient", "epidemi", "vakcín", "léčb", "senior", "domov pro seniory", "sociální služ", "péč"))
             return "health";
 
-        if (ContainsAny(normalized, "ekologi", "klima", "emis", "elektrár", "energet", "větrn", "přírod", "životní prostředí", "uhlí", "solár"))
-            return "environment";
 
         if (ContainsAny(normalized, "firma", "ekonom", "podnik", "koruna", "ceny", "inflac", "tržb", "akci", "bank", "pokut", "slev", "obchod", "řetězec", "market", "penny", "miliard", "náhradu škody", "investic"))
             return "business";

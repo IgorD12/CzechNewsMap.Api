@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --surface: #10151d;
   --surface-soft: #171e29;
   --surface-muted: #202936;
@@ -24,7 +25,24 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
+:root[data-theme='light'] {
+  color-scheme: light;
+  --surface: #f8fafc;
+  --surface-soft: #ffffff;
+  --surface-muted: #e8edf4;
+  --text: #243042;
+  --text-strong: #0f172a;
+  --text-muted: #64748b;
+  --border: #d8e0ea;
+  --border-strong: #b8c4d3;
+  --input-bg: #ffffff;
+  --accent: #2563eb;
+  --accent-soft: rgba(37, 99, 235, 0.12);
+  --badge-bg: rgba(37, 99, 235, 0.08);
+  --link: #1d4ed8;
+  --info: #1d4ed8;
+  --danger: #b42318;
+}
 * {
   box-sizing: border-box;
 }
