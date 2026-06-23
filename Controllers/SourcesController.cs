@@ -12,17 +12,20 @@ public class SourcesController : ControllerBase
     private readonly ArticleDedupService _dedupService;
     private readonly RssEventMapper _mapper;
     private readonly SourceDiagnosticsService _diagnosticsService;
+    private readonly ILogger<SourcesController> _logger;
 
     public SourcesController(
         IEnumerable<ISourceService> sources,
         ArticleDedupService dedupService,
         RssEventMapper mapper,
-        SourceDiagnosticsService diagnosticsService)
+        SourceDiagnosticsService diagnosticsService,
+        ILogger<SourcesController> logger)
     {
         _sources = sources;
         _dedupService = dedupService;
         _mapper = mapper;
         _diagnosticsService = diagnosticsService;
+        _logger = logger;
     }
 
     [HttpGet("diagnostics")]
@@ -39,8 +42,15 @@ public class SourcesController : ControllerBase
 
         foreach (var source in _sources)
         {
-            var articles = await source.GetArticlesAsync();
-            allArticles.AddRange(articles);
+            try
+            {
+                var articles = await source.GetArticlesAsync();
+                allArticles.AddRange(articles);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Source {SourceType} failed while loading events.", source.GetType().Name);
+            }
         }
 
         var deduplicated = _dedupService.Deduplicate(allArticles);

@@ -42,47 +42,54 @@ public class RssEventMapper
     {
         var normalized = Normalize(text);
 
-        if (ContainsAny(normalized, "policie", "policista", "policisté", "gibs", "zásah", "zákrok", "zákroku", "krádež", "loupež", "napaden", "zadrž", "zatkl", "soud", "vězení", "zločin", "pátrá", "pachatel", "podezřel", "zbraň", "zbraní", "ozbrojen", "kufr", "zavazadl", "evakuovali"))
+        if (ContainsAny(normalized, "policie", "policista", "policist", "gibs", "zásah", "zákrok", "krádež", "loupež", "napaden", "zadrž", "zatkl", "vězení", "zločin", "pátrá", "pachatel", "podezřel", "zbraň", "ozbrojen", "kufr", "zavazadl", "evaku", "vražd", "ubodal", "narkoman", "trestn", "detenc", "obžal"))
             return "crime";
 
-        if (ContainsAny(normalized, "film", "festival", "divadlo", "divadle", "divadla", "koncert", "výstava", "kultura", "hudba", "muzeum", "opera", "opery", "premiéra", "premiér", "herec", "herečka", "hollywood", "hoffman", "filharmonie", "symfonici", "akrobat", "gothic", "hra na hrdiny"))
+        if (ContainsAny(normalized, "film", "festival", "divadlo", "koncert", "výstav", "kultur", "hudb", "muze", "opera", "premiér", "herec", "herečk", "hollywood", "hoffman", "filharmon", "symfon", "akrobat", "gothic", "hra na hrdiny", "glóbus", "kameraman", "karlovar"))
             return "culture";
 
-        if (ContainsAny(normalized, "umělá inteligence", "umela inteligence", "ai olymp", "technologie", "technolog", "věda", "výzkum", "výzkumn", "robot", "kyber", "digital", "aplikace", "software"))
-            return "technology";
-
-        if (ContainsAny(normalized, "nemocnice", "lékař", "zdravot", "pacient", "epidemie", "vakcína", "léčba", "senior", "domov pro seniory", "sociální služ", "péče"))
-            return "health";
-
-        if (ContainsAny(normalized, "firma", "ekonomika", "podnik", "koruna", "ceny", "inflace", "tržby", "akcie", "bank", "pokuta", "sleva", "slevy", "obchod", "řetězec", "market", "penny"))
-            return "business";
-
-        if (ContainsAny(normalized, "mrakodrap", "budova", "stavba", "architekt", "developer", "bydlení", "rekonstrukce", "náměstí", "veřejný prostor"))
-            return "urban";
-
-        if (ContainsAny(normalized, "vláda", "prezident", "ministr", "sněmovna", "senát", "volby", "koalice", "opozice", "primátor", "starosta"))
-            return "politics";
-
-        if (ContainsAny(normalized, "škola", "univerzita", "student", "maturita", "učitel", "školství", "olympiáda", "olympiády"))
-            return "education";
-
-        if (ContainsAny(normalized, "hokej", "fotbal", "tenis", "sport", "liga", "utkání", "zápas", "kometa", "sparta", "slavia", "olympiáda", "olympiádu"))
+        if (ContainsAny(normalized, "hokej", "fotbal", "fotbalist", "tenis", "tenist", "sport", "liga", "utkání", "zápas", "kometa", "sparta", "slavia", "olympiád", "vondrouš", "muchov", "trenér"))
             return "sport";
 
-        if (ContainsAny(normalized, "požár", "hoří", "hořel", "hořela", "zapálil", "hasiči", "výbuch", "exploze"))
+        if (ContainsAny(normalized, "turist", "cestov", "hrad", "zámek", "památk", "zoo", "klementin", "čističk", "výlet", "návštěvn"))
+            return "tourism";
+
+        if (ContainsAny(normalized, "umělá inteligence", "umela inteligence", "ai olymp", "technolog", "věda", "výzkum", "robot", "kyber", "digital", "aplikace", "software"))
+            return "technology";
+
+        if (ContainsAny(normalized, "počasí", "bouř", "vítr", "déšť", "sníh", "povodeň", "vedr", "mráz", "tropick", "meteorolog"))
+            return "weather";
+
+        if (ContainsAny(normalized, "nemocnic", "lékař", "zdravot", "pacient", "epidemi", "vakcín", "léčb", "senior", "domov pro seniory", "sociální služ", "péč"))
+            return "health";
+
+        if (ContainsAny(normalized, "ekologi", "klima", "emis", "elektrár", "energet", "větrn", "přírod", "životní prostředí", "uhlí", "solár"))
+            return "environment";
+
+        if (ContainsAny(normalized, "firma", "ekonom", "podnik", "koruna", "ceny", "inflac", "tržb", "akci", "bank", "pokut", "slev", "obchod", "řetězec", "market", "penny", "miliard", "náhradu škody", "investic"))
+            return "business";
+
+        if (ContainsAny(normalized, "mrakodrap", "budov", "stavb", "architekt", "developer", "bydlen", "rekonstrukc", "náměst", "veřejný prostor"))
+            return "urban";
+
+        if (ContainsAny(normalized, "vlád", "prezident", "ministr", "sněmovn", "senát", "volb", "koalic", "opozic", "primátor", "starost", "poslanc", "zákon", "kompetenční žalob", "financování čt", "čro", "babiš", "pavel"))
+            return "politics";
+
+        if (ContainsAny(normalized, "škol", "univerzit", "student", "maturit", "učitel", "školstv", "deváťák", "přijat"))
+            return "education";
+
+        if (ContainsAny(normalized, "požár", "hoří", "hořel", "hořela", "zapálil", "hasič", "výbuch", "exploz"))
             return "fire";
 
-        if (ContainsAny(normalized, "nehoda", "srážka", "bouračka", "dálnice", "silnice", "kamion", "dopravu", "zastavili dopravu", "provoz", "kolona", "d1", "d2", "d5", "d8", "d11"))
+        if (ContainsAny(normalized, "nehod", "srážk", "bouračk", "dálnic", "silnic", "kamion", "dopravu", "zastavili dopravu", "provoz", "kolon", "d1", "d2", "d5", "d8", "d11"))
             return "traffic";
 
-        if (ContainsAny(normalized, "tramvaj", "metro", "autobus", "vlak", "mhd", "letiště", "železnice", "dopravní podnik"))
+        if (ContainsAny(normalized, "tramvaj", "metro", "autobus", "vlak", "mhd", "letišt", "železnic", "dopravní podnik"))
             return "transport";
-
-        if (ContainsAny(normalized, "počasí", "bouřka", "vítr", "déšť", "sníh", "povodeň", "vedro", "mráz"))
-            return "weather";
 
         return "general";
     }
+
     private static bool ContainsAny(string normalizedText, params string[] patterns)
     {
         return patterns.Any(pattern => ContainsNormalized(normalizedText, pattern));
@@ -90,7 +97,20 @@ public class RssEventMapper
 
     private static bool ContainsNormalized(string normalizedText, string pattern)
     {
-        return normalizedText.Contains(Normalize(pattern));
+        var normalizedPattern = Normalize(pattern).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedPattern))
+        {
+            return false;
+        }
+
+        if (normalizedPattern.Contains(' '))
+        {
+            return normalizedText.Contains($" {normalizedPattern} ");
+        }
+
+        return normalizedText
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(word => word.StartsWith(normalizedPattern, StringComparison.Ordinal));
     }
 
     private static string Normalize(string text)

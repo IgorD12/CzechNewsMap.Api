@@ -16,6 +16,10 @@ builder.Services.AddHttpClient<ISourceService, NovinkySourceService>();
 builder.Services.AddHttpClient<ISourceService, AktualneSourceService>();
 builder.Services.AddHttpClient<ISourceService, IrozhlasSourceService>();
 builder.Services.AddHttpClient<ISourceService, DenikSourceService>();
+builder.Services.AddHttpClient<ISourceService, CeskeNovinySourceService>();
+builder.Services.AddHttpClient<ISourceService, CnnPrimaSourceService>();
+builder.Services.AddHttpClient<ISourceService, Ct24SourceService>();
+builder.Services.AddHttpClient<ISourceService, SeznamZpravySourceService>();
 // builder.Services.AddHttpClient<ISourceService, PoliciePrahaSourceService>(); // specialized source, keep disabled until parsing is stricter
 
 builder.Services.AddCors(options =>

@@ -36,7 +36,7 @@ public sealed class CzechLocationCatalog
         new("Mělník", 50.3513, 14.4741, "mělník", "mělníku", "mělnicko"),
         new("Nymburk", 50.1861, 15.0417, "nymburk", "nymburku", "nymbursko"),
         new("Rakovník", 50.1037, 13.7334, "rakovník", "rakovníku", "rakovnicko"),
-        new("Tábor", 49.4144, 14.6578, "tábor", "táboře", "táborsko"),
+        new("Tábor", 49.4144, 14.6578, "město tábor", "městě tábor", "táborsko", "táborský", "táborská"),
         new("Písek", 49.3088, 14.1475, "písek", "písku", "písecko"),
         new("Strakonice", 49.2614, 13.9024, "strakonice", "strakonicích", "strakonicko"),
         new("Český Krumlov", 48.8127, 14.3175, "český krumlov", "českém krumlově", "krumlov", "krumlově"),
