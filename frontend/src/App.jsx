@@ -6,6 +6,7 @@ import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { useMap } from 'react-leaflet'
+import './App.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
@@ -50,48 +51,37 @@ function getSafeSourceUrl(sourceUrl) {
   }
 }
 
+function formatDate(value) {
+  return new Intl.DateTimeFormat('cs-CZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(value))
+}
+
 function getEventIcon(eventType) {
   const symbol = getEventTypeMeta(eventType).icon
 
   return L.divIcon({
-    html: `<div style="
-      font-size: 18px;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: white;
-      border: 2px solid #333;
-      border-radius: 50%;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-    ">${symbol}</div>`,
-    className: '',
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
+    html: `<span>${symbol}</span>`,
+    className: 'news-marker',
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
   })
 }
 
 function createPopupContent(event) {
   const type = getEventTypeMeta(event.eventType)
   const wrapper = document.createElement('div')
-  wrapper.style.minWidth = '220px'
+  wrapper.className = 'map-popup'
 
-  const title = document.createElement('b')
+  const title = document.createElement('strong')
   title.textContent = event.title
-  wrapper.append(title, document.createElement('br'))
+  wrapper.append(title)
 
-  const source = document.createElement('span')
-  source.textContent = event.sourceName
-  wrapper.append(source, document.createElement('br'))
-
-  const typeLine = document.createElement('span')
-  typeLine.textContent = `Typ: ${type.icon} ${type.label}`
-  wrapper.append(typeLine, document.createElement('br'))
-
-  const date = document.createElement('span')
-  date.textContent = `Datum: ${new Date(event.date).toLocaleDateString()}`
-  wrapper.append(date, document.createElement('br'), document.createElement('br'))
+  const meta = document.createElement('div')
+  meta.textContent = `${event.sourceName} · ${type.icon} ${type.label} · ${formatDate(event.date)}`
+  wrapper.append(meta)
 
   const safeUrl = getSafeSourceUrl(event.sourceUrl)
   if (safeUrl) {
@@ -110,7 +100,10 @@ function ClusterLayer({ events }) {
   const map = useMap()
 
   useEffect(() => {
-    const markers = L.markerClusterGroup()
+    const markers = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      maxClusterRadius: 42,
+    })
 
     events.forEach((event) => {
       const marker = L.marker([event.latitude, event.longitude], {
@@ -131,6 +124,170 @@ function ClusterLayer({ events }) {
   return null
 }
 
+function FilterPanel({
+  categoryCounts,
+  dataSource,
+  dateFrom,
+  dateTo,
+  loading,
+  onDataSourceChange,
+  onDateFromChange,
+  onDateToChange,
+  onResetFilters,
+  onSearchChange,
+  onSelectedTypeChange,
+  onSortOrderChange,
+  search,
+  selectedType,
+  sortOrder,
+  totalEvents,
+  visibleEvents,
+}) {
+  const activeCategoryCount = EVENT_TYPES.filter((type) => categoryCounts[type.value]).length
+
+  return (
+    <aside className="control-panel" aria-label="Filtry zpráv">
+      <div className="brand-block">
+        <h1>Czech News Map</h1>
+        <p>Geolokované zprávy z českých médií</p>
+      </div>
+
+      <div className="metric-row" aria-live="polite">
+        <div>
+          <span className="metric-value">{visibleEvents}</span>
+          <span className="metric-label">na mapě</span>
+        </div>
+        <div>
+          <span className="metric-value">{totalEvents}</span>
+          <span className="metric-label">načteno</span>
+        </div>
+      </div>
+
+      {loading && <div className="status-pill">Načítám zprávy...</div>}
+
+      <div className="form-grid">
+        <label className="field">
+          <span>Zdroj</span>
+          <select value={dataSource} onChange={(e) => onDataSourceChange(e.target.value)}>
+            <option value="rss">Živé zdroje</option>
+            <option value="demo">Demo</option>
+          </select>
+        </label>
+
+        <label className="field">
+          <span>Typ</span>
+          <select value={selectedType} onChange={(e) => onSelectedTypeChange(e.target.value)}>
+            {EVENT_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.icon} {type.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field field-wide">
+          <span>Hledat</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Název, zdroj nebo typ"
+          />
+        </label>
+
+        <label className="field">
+          <span>Datum od</span>
+          <input type="date" value={dateFrom} onChange={(e) => onDateFromChange(e.target.value)} />
+        </label>
+
+        <label className="field">
+          <span>Datum do</span>
+          <input type="date" value={dateTo} onChange={(e) => onDateToChange(e.target.value)} />
+        </label>
+
+        <label className="field field-wide">
+          <span>Řazení</span>
+          <select value={sortOrder} onChange={(e) => onSortOrderChange(e.target.value)}>
+            <option value="newest">Od nejnovějších</option>
+            <option value="oldest">Od nejstarších</option>
+          </select>
+        </label>
+      </div>
+
+      <button className="reset-button" type="button" onClick={onResetFilters}>
+        Resetovat filtry
+      </button>
+
+      <div className="legend-block">
+        <div className="section-title">Kategorie</div>
+        <div className="legend-list">
+          {EVENT_TYPES.filter((type) => type.value !== 'all' && categoryCounts[type.value]).map((type) => (
+            <button
+              className={selectedType === type.value ? 'legend-chip is-selected' : 'legend-chip'}
+              key={type.value}
+              type="button"
+              onClick={() => onSelectedTypeChange(type.value)}
+            >
+              <span>{type.icon}</span>
+              <span>{type.label}</span>
+              <strong>{categoryCounts[type.value]}</strong>
+            </button>
+          ))}
+        </div>
+        {activeCategoryCount === 0 && <div className="empty-note">Kategorie se zobrazí po načtení dat.</div>}
+      </div>
+    </aside>
+  )
+}
+
+function NewsCard({ event }) {
+  const type = getEventTypeMeta(event.eventType)
+  const safeUrl = getSafeSourceUrl(event.sourceUrl)
+
+  return (
+    <article className="news-card">
+      <div className="news-card-topline">
+        <span className="category-badge">{type.icon} {type.label}</span>
+        <time dateTime={event.date}>{formatDate(event.date)}</time>
+      </div>
+      <h3>{event.title}</h3>
+      <div className="news-meta">
+        <span>{event.sourceName}</span>
+      </div>
+      {safeUrl && (
+        <a className="source-link" href={safeUrl} target="_blank" rel="noopener noreferrer">
+          Otevřít zdroj
+        </a>
+      )}
+    </article>
+  )
+}
+
+function NewsList({ error, events, loading }) {
+  return (
+    <section className="list-panel" aria-label="Seznam zpráv">
+      <div className="panel-heading">
+        <div>
+          <h2>Události</h2>
+          <p>{events.length} položek podle aktuálních filtrů</p>
+        </div>
+      </div>
+
+      {error && <div className="error-state">{error}</div>}
+      {loading && <div className="empty-state">Načítám aktuální zprávy...</div>}
+      {!loading && !error && events.length === 0 && (
+        <div className="empty-state">Žádné zprávy neodpovídají aktuálním filtrům.</div>
+      )}
+
+      <div className="news-list">
+        {events.map((event, i) => (
+          <NewsCard event={event} key={`${event.sourceUrl}-${event.title}-${i}`} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function App() {
   const [events, setEvents] = useState([])
   const [selectedType, setSelectedType] = useState('all')
@@ -138,14 +295,13 @@ function App() {
   const [sortOrder, setSortOrder] = useState('newest')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [activeMobileView, setActiveMobileView] = useState('map')
 
   useEffect(() => {
-    const url =
-      dataSource === 'demo'
-        ? getApiUrl('/api/events')
-        : getApiUrl('/api/sources/events')
+    const url = dataSource === 'demo' ? getApiUrl('/api/events') : getApiUrl('/api/sources/events')
 
     setLoading(true)
     setError('')
@@ -161,11 +317,27 @@ function App() {
       .finally(() => setLoading(false))
   }, [dataSource])
 
+  const categoryCounts = useMemo(() => {
+    return events.reduce((counts, event) => {
+      counts[event.eventType] = (counts[event.eventType] ?? 0) + 1
+      return counts
+    }, {})
+  }, [events])
+
   const filteredEvents = useMemo(() => {
     let result = [...events]
+    const normalizedSearch = search.trim().toLowerCase()
 
     if (selectedType !== 'all') {
       result = result.filter((event) => event.eventType === selectedType)
+    }
+
+    if (normalizedSearch) {
+      result = result.filter((event) => {
+        const type = getEventTypeMeta(event.eventType)
+        const searchable = `${event.title} ${event.sourceName} ${type.label}`.toLowerCase()
+        return searchable.includes(normalizedSearch)
+      })
     }
 
     if (dateFrom) {
@@ -190,148 +362,60 @@ function App() {
     })
 
     return result
-  }, [events, selectedType, dateFrom, dateTo, sortOrder])
+  }, [dateFrom, dateTo, events, search, selectedType, sortOrder])
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        display: 'grid',
-        gridTemplateColumns: '280px 1fr 340px',
-      }}
-    >
-      {/* LEVÝ PANEL */}
-      <div
-        style={{
-          overflowY: 'auto',
-          padding: '16px',
-          borderRight: '1px solid #ddd',
+    <div className="app-shell">
+      <FilterPanel
+        categoryCounts={categoryCounts}
+        dataSource={dataSource}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        loading={loading}
+        onDataSourceChange={setDataSource}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        onResetFilters={() => {
+          setSelectedType('all')
+          setDateFrom('')
+          setDateTo('')
+          setSearch('')
         }}
-      >
-        <h2>Czech News Map</h2>
-        <div>Počet událostí: {filteredEvents.length}</div>
-        {loading && <div style={{ marginTop: '8px' }}>Načítám zprávy…</div>}
-        {error && <div style={{ marginTop: '8px', color: '#d33' }}>{error}</div>}
+        onSearchChange={setSearch}
+        onSelectedTypeChange={setSelectedType}
+        onSortOrderChange={setSortOrder}
+        search={search}
+        selectedType={selectedType}
+        sortOrder={sortOrder}
+        totalEvents={events.length}
+        visibleEvents={filteredEvents.length}
+      />
 
-        <div style={{ marginTop: '10px' }}>
-          <label>Zdroj</label>
-          <select
-            value={dataSource}
-            onChange={(e) => setDataSource(e.target.value)}
-            style={{ width: '100%' }}
-          >
-            <option value="rss">Živé zdroje</option>
-            <option value="demo">Demo</option>
-          </select>
-        </div>
-
-        <div style={{ marginTop: '10px' }}>
-          <label>Typ</label>
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            style={{ width: '100%' }}
-          >
-            {EVENT_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.icon} {type.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ marginTop: '10px' }}>
-          <label>Datum od</label>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginTop: '10px' }}>
-          <label>Datum do</label>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginTop: '10px' }}>
-          <label>Řazení</label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            style={{ width: '100%' }}
-          >
-            <option value="newest">Od nejnovějších</option>
-            <option value="oldest">Od nejstarších</option>
-          </select>
-        </div>
-
+      <nav className="mobile-tabs" aria-label="Mobilní zobrazení">
         <button
-          style={{ marginTop: '10px', width: '100%' }}
-          onClick={() => {
-            setSelectedType('all')
-            setDateFrom('')
-            setDateTo('')
-          }}
+          className={activeMobileView === 'map' ? 'is-active' : ''}
+          type="button"
+          onClick={() => setActiveMobileView('map')}
         >
-          Resetovat filtry
+          Mapa
         </button>
-      </div>
-
-      {/* MAPA */}
-      <div>
-        <MapContainer
-          center={[49.8, 15.5]}
-          zoom={7}
-          style={{ width: '100%', height: '100%' }}
+        <button
+          className={activeMobileView === 'list' ? 'is-active' : ''}
+          type="button"
+          onClick={() => setActiveMobileView('list')}
         >
+          Zprávy
+        </button>
+      </nav>
+
+      <main className={activeMobileView === 'map' ? 'map-panel is-active' : 'map-panel'}>
+        <MapContainer center={[49.8, 15.5]} zoom={7} className="map-canvas">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <ClusterLayer events={filteredEvents} />
         </MapContainer>
-      </div>
+      </main>
 
-      {/* PRAVÝ PANEL */}
-      <div
-        style={{
-          overflowY: 'auto',
-          padding: '16px',
-          borderLeft: '1px solid #ddd',
-        }}
-      >
-        <h2>Události</h2>
-
-        {!loading && filteredEvents.length === 0 && (
-          <div>Žádné zprávy neodpovídají aktuálním filtrům.</div>
-        )}
-
-        {filteredEvents.map((event, i) => {
-          const type = getEventTypeMeta(event.eventType)
-          const safeUrl = getSafeSourceUrl(event.sourceUrl)
-
-          return (
-            <div key={`${event.sourceUrl}-${i}`} style={{ marginBottom: '15px' }}>
-              <b>{event.title}</b>
-              <div>{event.sourceName}</div>
-              <div>
-                {type.icon} {type.label}
-              </div>
-              <div>{new Date(event.date).toLocaleDateString()}</div>
-              {safeUrl && (
-                <a href={safeUrl} target="_blank" rel="noopener noreferrer">
-                  Otevřít zdroj
-                </a>
-              )}
-            </div>
-          )
-        })}
-      </div>
+      <NewsList error={error} events={filteredEvents} loading={loading} />
     </div>
   )
 }
