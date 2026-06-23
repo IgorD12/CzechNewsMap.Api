@@ -7,18 +7,51 @@ import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { useMap } from 'react-leaflet'
 
-function getEventIcon(eventType) {
-  const iconMap = {
-    stabbing: '🔪',
-    shooting: '🔫',
-    arrest: '⛓️',
-    fight: '👊',
-    robbery: '💰',
-    fire: '🔥',
-    unknown: '❓',
-  }
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
-  const symbol = iconMap[eventType] || '❓'
+const EVENT_TYPES = [
+  { value: 'all', label: 'Vše', icon: '🗺️' },
+  { value: 'general', label: 'Obecné zprávy', icon: '📰' },
+  { value: 'politics', label: 'Politika', icon: '🏛️' },
+  { value: 'sport', label: 'Sport', icon: '⚽' },
+  { value: 'culture', label: 'Kultura', icon: '🎭' },
+  { value: 'traffic', label: 'Doprava', icon: '🚗' },
+  { value: 'transport', label: 'MHD / železnice', icon: '🚆' },
+  { value: 'crime', label: 'Krimi', icon: '🚓' },
+  { value: 'fire', label: 'Požár', icon: '🔥' },
+  { value: 'weather', label: 'Počasí', icon: '⛈️' },
+  { value: 'business', label: 'Ekonomika', icon: '💼' },
+  { value: 'health', label: 'Zdraví', icon: '🏥' },
+  { value: 'education', label: 'Školství', icon: '🎓' },
+  { value: 'stabbing', label: 'Napadení nožem', icon: '🔪' },
+  { value: 'shooting', label: 'Střelba', icon: '🔫' },
+  { value: 'arrest', label: 'Zatčení', icon: '⛓️' },
+  { value: 'fight', label: 'Potyčka', icon: '👊' },
+  { value: 'robbery', label: 'Loupež', icon: '💰' },
+  { value: 'unknown', label: 'Neznámé', icon: '❓' },
+]
+
+const EVENT_TYPE_BY_VALUE = Object.fromEntries(EVENT_TYPES.map((type) => [type.value, type]))
+
+function getEventTypeMeta(eventType) {
+  return EVENT_TYPE_BY_VALUE[eventType] ?? EVENT_TYPE_BY_VALUE.general
+}
+
+function getApiUrl(path) {
+  return `${API_BASE_URL}${path}`
+}
+
+function getSafeSourceUrl(sourceUrl) {
+  try {
+    const url = new URL(sourceUrl)
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : null
+  } catch {
+    return null
+  }
+}
+
+function getEventIcon(eventType) {
+  const symbol = getEventTypeMeta(eventType).icon
 
   return L.divIcon({
     html: `<div style="
@@ -39,6 +72,40 @@ function getEventIcon(eventType) {
   })
 }
 
+function createPopupContent(event) {
+  const type = getEventTypeMeta(event.eventType)
+  const wrapper = document.createElement('div')
+  wrapper.style.minWidth = '220px'
+
+  const title = document.createElement('b')
+  title.textContent = event.title
+  wrapper.append(title, document.createElement('br'))
+
+  const source = document.createElement('span')
+  source.textContent = event.sourceName
+  wrapper.append(source, document.createElement('br'))
+
+  const typeLine = document.createElement('span')
+  typeLine.textContent = `Typ: ${type.icon} ${type.label}`
+  wrapper.append(typeLine, document.createElement('br'))
+
+  const date = document.createElement('span')
+  date.textContent = `Datum: ${new Date(event.date).toLocaleDateString()}`
+  wrapper.append(date, document.createElement('br'), document.createElement('br'))
+
+  const safeUrl = getSafeSourceUrl(event.sourceUrl)
+  if (safeUrl) {
+    const link = document.createElement('a')
+    link.href = safeUrl
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    link.textContent = 'Otevřít zdroj'
+    wrapper.append(link)
+  }
+
+  return wrapper
+}
+
 function ClusterLayer({ events }) {
   const map = useMap()
 
@@ -50,16 +117,7 @@ function ClusterLayer({ events }) {
         icon: getEventIcon(event.eventType),
       })
 
-      marker.bindPopup(`
-        <div style="min-width: 220px">
-          <b>${event.title}</b><br/>
-          <span>${event.sourceName}</span><br/>
-          <span>Typ: ${event.eventType}</span><br/>
-          <span>Datum: ${new Date(event.date).toLocaleDateString()}</span><br/><br/>
-          <a href="${event.sourceUrl}" target="_blank">Otevřít zdroj</a>
-        </div>
-      `)
-
+      marker.bindPopup(createPopupContent(event))
       markers.addLayer(marker)
     })
 
@@ -81,19 +139,25 @@ function App() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const url =
       dataSource === 'demo'
-        ? 'http://localhost:5059/api/events'
-        : 'http://localhost:5059/api/sources/events'
+        ? getApiUrl('/api/events')
+        : getApiUrl('/api/sources/events')
 
     setLoading(true)
+    setError('')
 
     axios
       .get(url)
       .then((res) => setEvents(res.data))
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err)
+        setEvents([])
+        setError('Nepodařilo se načíst zprávy.')
+      })
       .finally(() => setLoading(false))
   }, [dataSource])
 
@@ -106,17 +170,18 @@ function App() {
 
     if (dateFrom) {
       result = result.filter((event) => {
-      const eventDay = new Date(event.date).toISOString().slice(0, 10)
-      return eventDay >= dateFrom
-    })
-  }
+        const eventDay = new Date(event.date).toISOString().slice(0, 10)
+        return eventDay >= dateFrom
+      })
+    }
 
     if (dateTo) {
       result = result.filter((event) => {
-      const eventDay = new Date(event.date).toISOString().slice(0, 10)
-      return eventDay <= dateTo
-    })
-  }
+        const eventDay = new Date(event.date).toISOString().slice(0, 10)
+        return eventDay <= dateTo
+      })
+    }
+
     result.sort((a, b) => {
       const dateA = new Date(a.date)
       const dateB = new Date(b.date)
@@ -146,6 +211,8 @@ function App() {
       >
         <h2>Czech News Map</h2>
         <div>Počet událostí: {filteredEvents.length}</div>
+        {loading && <div style={{ marginTop: '8px' }}>Načítám zprávy…</div>}
+        {error && <div style={{ marginTop: '8px', color: '#d33' }}>{error}</div>}
 
         <div style={{ marginTop: '10px' }}>
           <label>Zdroj</label>
@@ -166,10 +233,11 @@ function App() {
             onChange={(e) => setSelectedType(e.target.value)}
             style={{ width: '100%' }}
           >
-            <option value="all">Vše</option>
-            <option value="unknown">Unknown</option>
-            <option value="fire">Požár</option>
-            <option value="arrest">Zatčení</option>
+            {EVENT_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.icon} {type.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -239,16 +307,30 @@ function App() {
       >
         <h2>Události</h2>
 
-        {filteredEvents.map((event, i) => (
-          <div key={i} style={{ marginBottom: '15px' }}>
-            <b>{event.title}</b>
-            <div>{event.sourceName}</div>
-            <div>{new Date(event.date).toLocaleDateString()}</div>
-            <a href={event.sourceUrl} target="_blank">
-              Otevřít zdroj
-            </a>
-          </div>
-        ))}
+        {!loading && filteredEvents.length === 0 && (
+          <div>Žádné zprávy neodpovídají aktuálním filtrům.</div>
+        )}
+
+        {filteredEvents.map((event, i) => {
+          const type = getEventTypeMeta(event.eventType)
+          const safeUrl = getSafeSourceUrl(event.sourceUrl)
+
+          return (
+            <div key={`${event.sourceUrl}-${i}`} style={{ marginBottom: '15px' }}>
+              <b>{event.title}</b>
+              <div>{event.sourceName}</div>
+              <div>
+                {type.icon} {type.label}
+              </div>
+              <div>{new Date(event.date).toLocaleDateString()}</div>
+              {safeUrl && (
+                <a href={safeUrl} target="_blank" rel="noopener noreferrer">
+                  Otevřít zdroj
+                </a>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

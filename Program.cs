@@ -9,10 +9,11 @@ builder.Services.AddSingleton<RssEventMapper>();
 builder.Services.AddScoped<ArticleDedupService>();
 
 builder.Services.AddScoped<ISourceService, IdnesSourceService>();
-
-builder.Services.AddHttpClient<NovinkySourceService>();
-builder.Services.AddScoped<ISourceService, NovinkySourceService>();
-// builder.Services.AddScoped<ISourceService, PoliciePrahaSourceService>(); // пока можно выключить
+builder.Services.AddHttpClient<ISourceService, NovinkySourceService>();
+builder.Services.AddHttpClient<ISourceService, AktualneSourceService>();
+builder.Services.AddHttpClient<ISourceService, IrozhlasSourceService>();
+builder.Services.AddHttpClient<ISourceService, DenikSourceService>();
+// builder.Services.AddHttpClient<ISourceService, PoliciePrahaSourceService>(); // specialized source, keep disabled until parsing is stricter
 
 builder.Services.AddCors(options =>
 {
@@ -41,7 +42,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("Frontend");
-app.UseHttpsRedirection();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthorization();
 app.MapControllers().RequireCors("Frontend");
 

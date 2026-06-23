@@ -1,57 +1,53 @@
 using System.ServiceModel.Syndication;
 using System.Xml;
 using CzechNewsMap.Api.Models;
-using Microsoft.Extensions.Options;
 
 namespace CzechNewsMap.Api.Services;
 
-public class RssService
+public abstract class RssFeedSourceService : ISourceService
 {
     private readonly HttpClient _httpClient;
-    private readonly RssOptions _rssOptions;
 
-    public RssService(HttpClient httpClient, IOptions<RssOptions> rssOptions)
+    protected RssFeedSourceService(HttpClient httpClient)
     {
         _httpClient = httpClient;
         _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "CzechNewsMap/1.0");
-        _rssOptions = rssOptions.Value;
     }
 
-    public async Task<List<RssArticle>> GetLatestArticlesAsync(int maxItems = 10)
-    {
-        if (string.IsNullOrWhiteSpace(_rssOptions.FeedUrl))
-        {
-            throw new InvalidOperationException("RSS FeedUrl is not configured.");
-        }
+    protected abstract string FeedUrl { get; }
+    protected abstract string SourceName { get; }
+    protected virtual int MaxItems => 30;
 
-        using var stream = await _httpClient.GetStreamAsync(_rssOptions.FeedUrl);
+    public async Task<List<SourceArticle>> GetArticlesAsync()
+    {
+        using var stream = await _httpClient.GetStreamAsync(FeedUrl);
         using var xmlReader = XmlReader.Create(stream, new XmlReaderSettings
         {
             Async = true,
             DtdProcessing = DtdProcessing.Prohibit,
             XmlResolver = null
         });
+
         var feed = SyndicationFeed.Load(xmlReader);
 
         if (feed == null)
         {
-            return new List<RssArticle>();
+            return new List<SourceArticle>();
         }
-        
-        var articles = feed.Items
-            .Take(maxItems)
-            .Select(item => new RssArticle
+
+        return feed.Items
+            .Take(MaxItems)
+            .Select(item => new SourceArticle
             {
                 Title = item.Title?.Text ?? "",
                 Link = item.Links.FirstOrDefault()?.Uri?.ToString() ?? "",
                 PublishedAt = item.PublishDate != DateTimeOffset.MinValue
                     ? item.PublishDate.UtcDateTime
                     : DateTime.UtcNow,
-                SourceName = _rssOptions.SourceName,
-                Summary = item.Summary?.Text ?? ""
+                SourceName = SourceName,
+                Summary = item.Summary?.Text ?? item.Content?.ToString() ?? ""
             })
+            .Where(article => !string.IsNullOrWhiteSpace(article.Title))
             .ToList();
-
-        return articles;
     }
 }
