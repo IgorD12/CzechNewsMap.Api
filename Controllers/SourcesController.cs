@@ -11,15 +11,25 @@ public class SourcesController : ControllerBase
     private readonly IEnumerable<ISourceService> _sources;
     private readonly ArticleDedupService _dedupService;
     private readonly RssEventMapper _mapper;
+    private readonly SourceDiagnosticsService _diagnosticsService;
 
     public SourcesController(
         IEnumerable<ISourceService> sources,
         ArticleDedupService dedupService,
-        RssEventMapper mapper)
+        RssEventMapper mapper,
+        SourceDiagnosticsService diagnosticsService)
     {
         _sources = sources;
         _dedupService = dedupService;
         _mapper = mapper;
+        _diagnosticsService = diagnosticsService;
+    }
+
+    [HttpGet("diagnostics")]
+    public async Task<ActionResult<SourceDiagnosticsReport>> GetDiagnostics()
+    {
+        var report = await _diagnosticsService.BuildReportAsync();
+        return Ok(report);
     }
 
     [HttpGet("events")]

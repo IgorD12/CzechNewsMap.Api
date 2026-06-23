@@ -9,6 +9,7 @@ builder.Services.AddSingleton<CzechLocationCatalog>();
 
 builder.Services.AddSingleton<RssEventMapper>();
 builder.Services.AddScoped<ArticleDedupService>();
+builder.Services.AddScoped<SourceDiagnosticsService>();
 
 builder.Services.AddScoped<ISourceService, IdnesSourceService>();
 builder.Services.AddHttpClient<ISourceService, NovinkySourceService>();

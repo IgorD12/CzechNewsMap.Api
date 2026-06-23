@@ -16,6 +16,8 @@ const EVENT_TYPES = [
   { value: 'politics', label: 'Politika', icon: '🏛️' },
   { value: 'sport', label: 'Sport', icon: '⚽' },
   { value: 'culture', label: 'Kultura', icon: '🎭' },
+  { value: 'technology', label: 'Technologie', icon: '🤖' },
+  { value: 'urban', label: 'Město / stavby', icon: '🏙️' },
   { value: 'traffic', label: 'Doprava', icon: '🚗' },
   { value: 'transport', label: 'MHD / železnice', icon: '🚆' },
   { value: 'crime', label: 'Krimi', icon: '🚓' },

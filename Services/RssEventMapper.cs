@@ -42,42 +42,47 @@ public class RssEventMapper
     {
         var normalized = Normalize(text);
 
-        if (ContainsAny(normalized, "hokej", "fotbal", "tenis", "sport", "liga", "utkání", "zápas", "kometa", "sparta", "slavia", "olympiáda", "olympiádu"))
-            return "sport";
+        if (ContainsAny(normalized, "policie", "policista", "policisté", "gibs", "zásah", "zákrok", "zákroku", "krádež", "loupež", "napaden", "zadrž", "zatkl", "soud", "vězení", "zločin", "pátrá", "pachatel", "podezřel", "zbraň", "zbraní", "ozbrojen", "kufr", "zavazadl", "evakuovali"))
+            return "crime";
 
-        if (ContainsAny(normalized, "film", "festival", "divadlo", "divadle", "divadla", "koncert", "výstava", "kultura", "hudba", "muzeum", "opera", "opery", "premiéra", "premiér"))
+        if (ContainsAny(normalized, "film", "festival", "divadlo", "divadle", "divadla", "koncert", "výstava", "kultura", "hudba", "muzeum", "opera", "opery", "premiéra", "premiér", "herec", "herečka", "hollywood", "hoffman", "filharmonie", "symfonici", "akrobat", "gothic", "hra na hrdiny"))
             return "culture";
 
-        if (ContainsAny(normalized, "požár", "hoří", "hořel", "hořela", "zapálil", "hasiči", "výbuch", "exploze"))
-            return "fire";
+        if (ContainsAny(normalized, "umělá inteligence", "umela inteligence", "ai olymp", "technologie", "technolog", "věda", "výzkum", "výzkumn", "robot", "kyber", "digital", "aplikace", "software"))
+            return "technology";
 
-        if (ContainsAny(normalized, "nehoda", "srážka", "bouračka", "dálnice", "silnice", "vlak narazil", "auto", "kamion", "dopravu", "zastavili dopravu"))
-            return "traffic";
+        if (ContainsAny(normalized, "nemocnice", "lékař", "zdravot", "pacient", "epidemie", "vakcína", "léčba", "senior", "domov pro seniory", "sociální služ", "péče"))
+            return "health";
 
-        if (ContainsAny(normalized, "tramvaj", "metro", "autobus", "vlak", "mhd", "letiště", "železnice", "dopravní podnik"))
-            return "transport";
+        if (ContainsAny(normalized, "firma", "ekonomika", "podnik", "koruna", "ceny", "inflace", "tržby", "akcie", "bank", "pokuta", "sleva", "slevy", "obchod", "řetězec", "market", "penny"))
+            return "business";
 
-        if (ContainsAny(normalized, "policie", "policista", "policisté", "gibs", "zákrok", "zákroku", "krádež", "loupež", "napaden", "zadrž", "zatkl", "soud", "vězení", "zločin", "pátrá", "pachatel"))
-            return "crime";
+        if (ContainsAny(normalized, "mrakodrap", "budova", "stavba", "architekt", "developer", "bydlení", "rekonstrukce", "náměstí", "veřejný prostor"))
+            return "urban";
 
         if (ContainsAny(normalized, "vláda", "prezident", "ministr", "sněmovna", "senát", "volby", "koalice", "opozice", "primátor", "starosta"))
             return "politics";
 
-        if (ContainsAny(normalized, "nemocnice", "lékař", "zdravot", "pacient", "epidemie", "vakcína", "léčba"))
-            return "health";
-
-        if (ContainsAny(normalized, "škola", "univerzita", "student", "maturita", "učitel", "školství"))
+        if (ContainsAny(normalized, "škola", "univerzita", "student", "maturita", "učitel", "školství", "olympiáda", "olympiády"))
             return "education";
 
-        if (ContainsAny(normalized, "firma", "ekonomika", "podnik", "koruna", "ceny", "inflace", "tržby", "akcie", "bank"))
-            return "business";
+        if (ContainsAny(normalized, "hokej", "fotbal", "tenis", "sport", "liga", "utkání", "zápas", "kometa", "sparta", "slavia", "olympiáda", "olympiádu"))
+            return "sport";
+
+        if (ContainsAny(normalized, "požár", "hoří", "hořel", "hořela", "zapálil", "hasiči", "výbuch", "exploze"))
+            return "fire";
+
+        if (ContainsAny(normalized, "nehoda", "srážka", "bouračka", "dálnice", "silnice", "kamion", "dopravu", "zastavili dopravu", "provoz", "kolona", "d1", "d2", "d5", "d8", "d11"))
+            return "traffic";
+
+        if (ContainsAny(normalized, "tramvaj", "metro", "autobus", "vlak", "mhd", "letiště", "železnice", "dopravní podnik"))
+            return "transport";
 
         if (ContainsAny(normalized, "počasí", "bouřka", "vítr", "déšť", "sníh", "povodeň", "vedro", "mráz"))
             return "weather";
 
         return "general";
     }
-
     private static bool ContainsAny(string normalizedText, params string[] patterns)
     {
         return patterns.Any(pattern => ContainsNormalized(normalizedText, pattern));
