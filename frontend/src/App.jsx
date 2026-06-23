@@ -80,7 +80,7 @@ function createPopupContent(event) {
   wrapper.append(title)
 
   const meta = document.createElement('div')
-  meta.textContent = `${event.sourceName} · ${type.icon} ${type.label} · ${formatDate(event.date)}`
+  meta.textContent = `${event.locationName ? `${event.locationName} · ` : ''}${event.sourceName} · ${type.icon} ${type.label} · ${formatDate(event.date)}`
   wrapper.append(meta)
 
   const safeUrl = getSafeSourceUrl(event.sourceUrl)
@@ -191,7 +191,7 @@ function FilterPanel({
             type="search"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Název, zdroj nebo typ"
+            placeholder="Název, město, zdroj nebo typ"
           />
         </label>
 
@@ -252,7 +252,7 @@ function NewsCard({ event }) {
       </div>
       <h3>{event.title}</h3>
       <div className="news-meta">
-        <span>{event.sourceName}</span>
+        <span>{event.locationName ? `${event.locationName} · ` : ''}{event.sourceName}</span>
       </div>
       {safeUrl && (
         <a className="source-link" href={safeUrl} target="_blank" rel="noopener noreferrer">
@@ -335,7 +335,7 @@ function App() {
     if (normalizedSearch) {
       result = result.filter((event) => {
         const type = getEventTypeMeta(event.eventType)
-        const searchable = `${event.title} ${event.sourceName} ${type.label}`.toLowerCase()
+        const searchable = `${event.title} ${event.locationName ?? ''} ${event.sourceName} ${type.label}`.toLowerCase()
         return searchable.includes(normalizedSearch)
       })
     }

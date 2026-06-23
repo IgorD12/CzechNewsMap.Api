@@ -6,30 +6,12 @@ namespace CzechNewsMap.Api.Services;
 
 public class RssEventMapper
 {
-    private static readonly LocationRule[] LocationRules =
+    private readonly CzechLocationCatalog _locations;
+
+    public RssEventMapper(CzechLocationCatalog locations)
     {
-        new("Praha", 50.0755, 14.4378, "praha", "praze", "prahy", "prahou", "pražský"),
-        new("Brno", 49.1951, 16.6068, "brno", "brně", "brna", "brnem", "brněnský"),
-        new("Ostrava", 49.8209, 18.2625, "ostrava", "ostravě", "ostravy", "ostravský"),
-        new("Plzeň", 49.7384, 13.3736, "plzeň", "plzni", "plzen", "plzeňský"),
-        new("Liberec", 50.7671, 15.0562, "liberec", "liberci", "liberecký"),
-        new("Olomouc", 49.5938, 17.2509, "olomouc", "olomouci", "olomoucký"),
-        new("České Budějovice", 48.9745, 14.4743, "české budějovice", "českých budějovicích", "budějovice", "budějovicích"),
-        new("Hradec Králové", 50.2104, 15.8252, "hradec králové", "hradci králové", "královéhradecký"),
-        new("Pardubice", 50.0343, 15.7812, "pardubice", "pardubicích", "pardubický"),
-        new("Ústí nad Labem", 50.6607, 14.0323, "ústí nad labem", "ústecký"),
-        new("Karlovy Vary", 50.2319, 12.8710, "karlovy vary", "karlových varech", "karlovarský"),
-        new("Zlín", 49.2244, 17.6628, "zlín", "zlíně", "zlínský"),
-        new("Jihlava", 49.3961, 15.5912, "jihlava", "jihlavě", "jihlavy", "vysočina"),
-        new("Kladno", 50.1431, 14.1052, "kladno", "kladně", "kladenska"),
-        new("Mladá Boleslav", 50.4114, 14.9032, "mladá boleslav", "mladé boleslavi", "boleslav"),
-        new("Most", 50.5030, 13.6362, "mostecko", "mostecku", "okres most"),
-        new("Opava", 49.9387, 17.9026, "opava", "opavě", "opavsko"),
-        new("Karviná", 49.8567, 18.5432, "karviná", "karviné", "karvinsko"),
-        new("Havířov", 49.7800, 18.4369, "havířov", "havířově"),
-        new("Frýdek-Místek", 49.6819, 18.3673, "frýdek místek", "frýdku místku", "frýdecko místecko"),
-        new("Hodkovice nad Mohelkou", 50.6659, 15.0898, "hodkovice", "hodkovicích", "hodkovice nad mohelkou")
-    };
+        _locations = locations;
+    }
 
     public NewsEvent? MapToEvent(RssArticle article)
     {
@@ -37,7 +19,7 @@ public class RssEventMapper
         var summary = article.Summary ?? "";
         var fullText = title + " " + summary;
 
-        var location = GetLocation(fullText);
+        var location = _locations.Find(title) ?? _locations.Find(summary);
         if (location == null)
         {
             return null;
@@ -48,26 +30,12 @@ public class RssEventMapper
             Title = title,
             SourceName = article.SourceName ?? "",
             SourceUrl = article.Link ?? "",
-            Latitude = location.Value.lat,
-            Longitude = location.Value.lng,
+            LocationName = location.Name,
+            Latitude = location.Latitude,
+            Longitude = location.Longitude,
             EventType = GetEventType(fullText),
             Date = article.PublishedAt
         };
-    }
-
-    private (double lat, double lng)? GetLocation(string text)
-    {
-        var normalized = Normalize(text);
-
-        foreach (var location in LocationRules)
-        {
-            if (location.Patterns.Any(pattern => ContainsNormalized(normalized, pattern)))
-            {
-                return (location.Latitude, location.Longitude);
-            }
-        }
-
-        return null;
     }
 
     private string GetEventType(string text)
@@ -140,6 +108,4 @@ public class RssEventMapper
         return string.Join(" ", builder.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             .Insert(0, " ") + " ";
     }
-
-    private sealed record LocationRule(string Name, double Latitude, double Longitude, params string[] Patterns);
 }

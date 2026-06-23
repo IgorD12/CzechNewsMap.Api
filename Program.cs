@@ -5,6 +5,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+builder.Services.AddSingleton<CzechLocationCatalog>();
+
 builder.Services.AddSingleton<RssEventMapper>();
 builder.Services.AddScoped<ArticleDedupService>();
 
